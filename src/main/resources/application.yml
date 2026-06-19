@@ -3,11 +3,12 @@ spring:
     name: votaciones-api
 
   # ── Configuración de Base de Datos (Conectado a Neon en la Nube) ───────
-  datasource:
-    url: jdbc:postgresql://ep-young-bread-ai7gtncw-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require
-    username: neondb_owner
-    password: npg_sTmS57DUpHxz
-    driver-class-name: org.postgresql.Driver 
+ datasource:
+    # Si la variable de entorno SPRING_DATASOURCE_URL existe, la usará; si no, usará la de Neon
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://ep-young-bread-ai7gtncw-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:neondb_owner}
+    password: ${SPRING_DATASOURCE_PASSWORD:npg_sTmS57DUpHxz}
+    driver-class-name: org.postgresql.Driver
       
     hikari:
       pool-name: VotacionesPool
@@ -34,6 +35,7 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: true
+    repair-at-start: true
 
 # ── JWT ───────────────────────────────────────────────────────
 jwt:
