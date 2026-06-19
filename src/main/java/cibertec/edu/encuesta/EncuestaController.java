@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+@CrossOrigin(origins = "https://sistema-encuestas-frontend.onrender.com")
 @RestController
 @RequestMapping("/api/encuestas")
 public class EncuestaController {
