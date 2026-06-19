@@ -18,6 +18,7 @@ import java.util.UUID;
  * POST /api/encuestas/{id}/votar       → emitir voto (usuario autenticado)
  * GET  /api/encuestas/{id}/resultados  → ver resultados (cualquier autenticado)
  */
+@CrossOrigin(origins = "https://sistema-encuestas-frontend.onrender.com")
 @RestController
 @RequestMapping("/api/encuestas/{encuestaId}")
 public class VotoController {
