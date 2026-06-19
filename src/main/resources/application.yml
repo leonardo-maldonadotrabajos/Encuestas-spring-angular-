@@ -1,8 +1,8 @@
 spring:
   application:
     name: votaciones-api
-  
-  # La indentación aquí es crucial (2 espacios por nivel)
+
+  # ── Configuración de Base de Datos ───────────────────────
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://ep-young-bread-ai7gtncw-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require}
     username: ${SPRING_DATASOURCE_USERNAME:neondb_owner}
@@ -17,6 +17,7 @@ spring:
       max-lifetime: 1800000
       connection-test-query: SELECT 1
 
+  # ── Configuración de JPA / Hibernate ─────────────────────
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -26,6 +27,7 @@ spring:
       hibernate:
         format_sql: true
 
+  # ── Migraciones Flyway ───────────────────────────────────
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -33,13 +35,22 @@ spring:
     validate-on-migrate: true
     repair-at-start: true
 
-# Asegúrate de que las secciones principales estén alineadas al borde izquierdo
+# ── JWT ───────────────────────────────────────────────────
 jwt:
   secret: dW5hc2VuYWxzdXBlcnNlY3JldGF5bGFyZ2FjYW1iaWFtZWRlc3B1ZXNjaWJlcnRlYzIwMjY=
   expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
+# ── Servidor ──────────────────────────────────────────────
 server:
   port: ${PORT:8080}
   error:
     include-stacktrace: never
     include-message: always
+
+# ── Logging ───────────────────────────────────────────────
+logging:
+  level:
+    root: INFO
+    cibertec.edu: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web.socket: DEBUG
