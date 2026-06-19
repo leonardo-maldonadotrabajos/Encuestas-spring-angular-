@@ -16,19 +16,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Filtro que se ejecuta UNA VEZ por petición HTTP.
- *
- * Flujo:
- *   1. Extrae el token del header Authorization: Bearer <token>
- *   2. Valida el token con JwtUtil
- *   3. Carga el usuario en el SecurityContext
- *   4. Continúa la cadena de filtros
- *
- * Si el token es inválido o ausente, la petición continúa sin
- * autenticación y Spring Security la rechazará si el endpoint
- * requiere autenticación.
- */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -47,41 +34,36 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // Sin header o sin prefijo Bearer → pasar sin autenticar
+        // Si no hay token, pasamos al siguiente filtro (Spring decidirá si es un endpoint público)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7); // Quitar "Bearer "
+        String token = authHeader.substring(7);
 
-        if (!jwtUtil.esValido(token)) {
-            filterChain.doFilter(request, response);
-            return;
+        try {
+            if (jwtUtil.esValido(token)) {
+                UUID usuarioId = jwtUtil.extraerUsuarioId(token);
+                String email = jwtUtil.extraerEmail(token);
+                String rol = jwtUtil.extraerRol(token);
+
+                var authority1 = new SimpleGrantedAuthority(rol);
+                var authority2 = new SimpleGrantedAuthority("ROLE_" + rol.toUpperCase());
+                List<SimpleGrantedAuthority> authorities = List.of(authority1, authority2);
+
+                var authentication = new UsernamePasswordAuthenticationToken(
+                        new UsuarioPrincipal(usuarioId, email, rol),
+                        null,
+                        authorities
+                );
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        } catch (Exception e) {
+            // Token inválido: simplemente no autenticamos, la petición continúa
+            System.err.println("Error procesando JWT: " + e.getMessage());
         }
-
-        // Extraer datos del token
-     // Extraer datos del token
-        UUID   usuarioId = jwtUtil.extraerUsuarioId(token);
-        String email     = jwtUtil.extraerEmail(token);
-        String rol       = jwtUtil.extraerRol(token);
-
-        // Creamos las autoridades
-        var authority1 = new SimpleGrantedAuthority(rol); 
-        var authority2 = new SimpleGrantedAuthority("ROLE_" + rol.toUpperCase());
-        
-        // Creamos la lista y la llamamos exactamente 'authorities'
-        List<SimpleGrantedAuthority> authorities = List.of(authority1, authority2);
-
-        var authentication = new UsernamePasswordAuthenticationToken(
-                new UsuarioPrincipal(usuarioId, email, rol),
-                null,
-                authorities // <- Ahora sí coincide el nombre de la variable
-        );
-        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-        // Registrar en el contexto de seguridad
-        SecurityContextHolder.getContext().setAuthentication(authentication);
 
         filterChain.doFilter(request, response);
     }
