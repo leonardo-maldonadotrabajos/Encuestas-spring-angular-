@@ -31,7 +31,7 @@ import java.util.List;
  */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity          // Habilita @PreAuthorize en los controladores
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
@@ -43,42 +43,20 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-                // Sin estado de sesión
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // Sin CSRF (APIs REST stateless no lo necesitan)
-                .csrf(AbstractHttpConfigurer::disable)
-
-                // CORS configurado en corsConfigurationSource()
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // Reglas de autorización por endpoint
-                .authorizeHttpRequests(auth -> auth
-
-                        // Endpoints públicos de autenticación
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/registro").permitAll()
-
-                        // ── ENCUESTAS: solo lectura pública, el resto requiere autenticación ──
-                        .requestMatchers(HttpMethod.GET, "/api/encuestas/**").permitAll()
-                        // ─────────────────────────────────────────────────────────────────
-
-                        // WebSocket handshake (el token se valida dentro del handler)
-                        .requestMatchers("/ws/**").permitAll()
-
-                        // Health check (útil para load balancers en la nube)
-                        .requestMatchers("/actuator/health").permitAll()
-
-                        // Todo lo demás requiere autenticación
-                        .anyRequest().authenticated()
-                )
-
-                // Agregar filtro JWT antes del filtro estándar de autenticación
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-
-                .build();
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .authorizeHttpRequests(auth -> auth
+                // Endpoints públicos explícitos
+                .requestMatchers("/api/auth/**").permitAll() 
+                .requestMatchers(HttpMethod.GET, "/api/encuestas/**").permitAll()
+                .requestMatchers("/ws/**", "/actuator/health").permitAll()
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .build();
     }
+    
 
     /**
      * CORS: permitir peticiones desde el frontend.
